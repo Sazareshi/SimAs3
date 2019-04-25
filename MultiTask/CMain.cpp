@@ -3,9 +3,25 @@
 
 
 CMain::CMain(){
+	WindowPositionX = 100;
+	WindowPositionY = 100;
+	WindowWidth = 512;
+	WindowHeight = 512;
+	dummy_argc = 1;
+	argv = WindowTitle;
+	dummy_argv = &argv;
 }
 CMain::~CMain(){
 }
+
+char CMain::WindowTitle[128] = "世界の始まり"; //ウィンドウのタイト
+int CMain::WindowPositionX;					//生成するウィンドウ位置のX座標
+int CMain::WindowPositionY;					//生成するウィンドウ位置のY座標
+int CMain::WindowWidth;						//生成するウィンドウの幅
+int CMain::WindowHeight;						//生成するウィンドウの高さ
+int CMain::dummy_argc;
+char* CMain::argv;
+char** CMain::dummy_argv;
 
 LRESULT CALLBACK  CMain::PanelProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp) {
 	int n;
@@ -244,3 +260,33 @@ void CMain::set_panel_tip_txt()
 	SetWindowText(GetDlgItem(inf.hWnd_opepane, IDC_STATIC_TASKSET3), wstr.c_str());
 	SetWindowText(GetDlgItem(inf.hWnd_opepane, IDC_STATIC_TASKSET4), wstr_type.c_str());
 }
+
+
+//#################### OPEN GL ################################################
+void CMain::ActOpenGL(void) {
+	glutInit(&dummy_argc, dummy_argv);//環境の初期化
+	glutInitWindowPosition(WindowPositionX, WindowPositionY);//ウィンドウの位置の指定
+	glutInitWindowSize(WindowWidth, WindowHeight); //ウィンドウサイズの指定
+	glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH | GLUT_DOUBLE);//ディスプレイモードの指定
+	glutCreateWindow(WindowTitle);  //ウィンドウの作成
+	glutDisplayFunc(Display); //描画時に呼び出される関数を指定する（関数名：Display）
+	Initialize(); //初期設定の関数を呼び出す
+	glutMainLoop();
+}
+
+//----------------------------------------------------
+// 初期設定の関数
+//----------------------------------------------------
+void CMain::Initialize(void) {
+	glClearColor(1.0, 1.0, 1.0, 1.0); //背景色
+	glEnable(GL_DEPTH_TEST);//デプスバッファを使用：glutInitDisplayMode() で GLUT_DEPTH を指定する
+}
+//----------------------------------------------------
+// 描画の関数
+//----------------------------------------------------
+void CMain::Display(void) {
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); //バッファの消去
+
+	glutSwapBuffers(); //glutInitDisplayMode(GLUT_DOUBLE)でダブルバッファリングを利用可
+}
+
