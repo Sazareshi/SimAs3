@@ -22,6 +22,7 @@ public:
 //OPEN GL---------------------------------------------
 	static void Initialize(void);
 	static void Display(void);
+	static void Ground(void);
 
 	static void ActOpenGL(void);
 //OPEN GL---------------------------------------------
