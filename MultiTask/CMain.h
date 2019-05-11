@@ -1,7 +1,9 @@
 #pragma once
 #include "ThreadObj.h"
+#include <time.h>
 
 #define _BITMAP 0
+#define SCALE (2.0 * 3.14159265358979323846)  // マウスの相対位置→回転角の換算係数
 
 //----------------------------------------------------
 // 物質質感の定義
@@ -37,10 +39,6 @@ public:
 	static int WindowWidth;						//生成するウィンドウの幅
 	static int WindowHeight;					//生成するウィンドウの高さ
 	static char WindowTitle[128];// = "世界の始まり"; //ウィンドウのタイトル
-	 // Window Appliにするためのダミー引数
-	static int dummy_argc;
-	static char* argv;
-	static char** dummy_argv;
 
 	static bool _Bitmap;
 	static int tn;
@@ -81,14 +79,24 @@ public:
 	static double vx, vy, vz;
 	static double hanpatu;
 
-	#include <time.h>
 
 	static GLfloat floor_planar[4];
 	static GLfloat floor_s;
 	static GLfloat pM[16];
 	static GLfloat lightpos[4];
 	static QUADS_VERTEX floor_v;
-	
+
+	static int list;
+
+	static int cx, cy;    // ドラッグ開始位置
+	static double sx, sy; // マウスの絶対位置→ウィンドウ内での相対位置の換算係数
+	static double cq[4];  // 回転の初期値 (クォータニオン)
+	static double tq[4];  // ドラッグ中の回転 (クォータニオン)
+	static double rt[16]; // 回転の変換行列
+
+	static unsigned int listNumber;
+	static float camera_z_pos;
+
 	//-----------------------------------------
 
 	LRESULT CALLBACK PanelProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp);
@@ -106,11 +114,17 @@ public:
 	static void DrawFloor(bool bTexture);
 	static void DrawShadow(void);
 	static void DrawStructure(bool);
+	static void DRAW_STRING(int x, int y, char *string, void *font);
+	static void DISPLAY_TEXT(int x, int y, char *string);
+
+	static void qmul(double r[], const double p[], const double q[]);
+	static void qrot(double r[], double q[]);
+	static void mouse_motion(int x, int y);
+	static void mouse_on(int button, int state, int x, int y);
+	static void mouse_wheel(float z);
 
 	static void ActOpenGL(void);
-
-
-
+	
 //OPEN GL---------------------------------------------
 
 };

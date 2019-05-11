@@ -7,23 +7,28 @@ CMain::CMain(){
 	WindowPositionY = 100;
 	WindowWidth = 512;
 	WindowHeight = 512;
-	dummy_argc = 1;
-	argv = WindowTitle;
-	dummy_argv = &argv;
+	//dummy_argc = 1;
+	//argv = WindowTitle;
+	//dummy_argv = &argv;
 
 
 }
 CMain::~CMain(){
 }
 
-char CMain::WindowTitle[128] = "世界の始まり"; //ウィンドウのタイト
 int CMain::WindowPositionX;					//生成するウィンドウ位置のX座標
 int CMain::WindowPositionY;					//生成するウィンドウ位置のY座標
 int CMain::WindowWidth;						//生成するウィンドウの幅
 int CMain::WindowHeight;						//生成するウィンドウの高さ
-int CMain::dummy_argc;
-char* CMain::argv;
-char** CMain::dummy_argv;
+
+char CMain::WindowTitle[128] = "世界の始まり"; //ウィンドウのタイト
+GLfloat CMain::floor_planar[4];
+GLfloat CMain::floor_s = 50.0f;
+GLfloat CMain::pM[16];
+GLfloat CMain::lightpos[4] = { -30, -100, 50, 1 };
+
+QUADS_VERTEX CMain::floor_v = { { floor_s,  floor_s, -1.0f },{ -floor_s,  floor_s, -1.0f },{ -floor_s, -floor_s, -1.0f },{ floor_s, -floor_s, -1.0f }, };
+
 bool CMain::_Bitmap = false;
 
 double CMain::PI = acos(-1.0);
@@ -35,13 +40,8 @@ gl_screenshot CMain::gs; //bmpファイルの出力
 st_p CMain::p[100];
 int CMain::pn = 0;
 double CMain::ax = 0.0, CMain::ay = 0.0, CMain::az = -2.0;
-double CMain::vx = 5.0, CMain::vy = 10.0, CMain::vz = 20.0;
+double CMain::vx = 5.0, CMain::vy = 5.0, CMain::vz = 20.0;
 double CMain::hanpatu = 0.9;
-GLfloat CMain::floor_planar[4];
-GLfloat CMain::floor_s = 50.0f;
-GLfloat CMain::pM[16];
-GLfloat CMain::lightpos[4] = { -30, -100, 50, 1 };
-QUADS_VERTEX CMain::floor_v = {{ floor_s,  floor_s, -1.0f },{ -floor_s,  floor_s, -1.0f },{ -floor_s, -floor_s, -1.0f },{ floor_s, -floor_s, -1.0f },};
 
 //直方体の定義
 GLdouble CMain::vertex[][3] = {{ 0.0, 0.0, 0.0 },{ 2.0, 0.0, 0.0 },{ 2.0, 2.0, 0.0 },{ 0.0, 2.0, 0.0 },{ 0.0, 0.0, 30.0 },{ 2.0, 0.0, 30.0 },{ 2.0, 2.0, 30.0 },{ 0.0, 2.0, 30.0 }};
@@ -49,6 +49,16 @@ GLdouble CMain::vertex[][3] = {{ 0.0, 0.0, 0.0 },{ 2.0, 0.0, 0.0 },{ 2.0, 2.0, 0
 int CMain::face[][4] = {{ 0, 1, 2, 3 },{ 1, 5, 6, 2 },{ 5, 4, 7, 6 },{ 4, 0, 3, 7 },{ 4, 5, 1, 0 },{ 3, 2, 6, 7 }};
 //面の法線ベクトル
 GLdouble CMain::normal[][3] = {{ 0.0, 0.0,-1.0 },{ 1.0, 0.0, 0.0 },{ 0.0, 0.0, 1.0 },{ -1.0, 0.0, 0.0 },{ 0.0,-1.0, 0.0 },{ 0.0, 1.0, 0.0 }};
+
+int CMain::cx, CMain::cy;                // ドラッグ開始位置
+double CMain::sx, CMain::sy;              // マウスの絶対位置→ウィンドウ内での相対位置の換算係数
+double CMain::cq[4] = { 1.0, 0.0, 0.0, 0.0 };  // 回転の初期値 (クォータニオン)
+double CMain::tq[4];              // ドラッグ中の回転 (クォータニオン)
+double CMain::rt[16];              // 回転の変換行列
+
+unsigned int CMain::listNumber;
+float CMain::camera_z_pos = 50.0;
+
 
 //----------------------------------------------------
 // 色の定義
@@ -69,6 +79,8 @@ GLfloat CMain::shininess = 30.0;//光沢の強さ
 double CMain::ViewPointX = 0.0;
 double CMain::ViewPointY = -50.0;
 double CMain::ViewPointZ = 20.0;
+
+int CMain::list;
 
 
 LRESULT CALLBACK  CMain::PanelProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp) {
@@ -319,13 +331,17 @@ void CMain::ActOpenGL(void) {
 
 	if (_Bitmap) _mkdir("bitmap"); //bmpファイル保存用のフォルダの作成
 
-	glutInit(&dummy_argc, dummy_argv);//環境の初期化
+//	glutInit(&dummy_argc, dummy_argv);//環境の初期化
+	glutInit(&__argc, __argv);//環境の初期化
 	glutInitWindowPosition(WindowPositionX, WindowPositionY);//ウィンドウの位置の指定
 	glutInitWindowSize(WindowWidth, WindowHeight); //ウィンドウサイズの指定
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH | GLUT_DOUBLE);//ディスプレイモードの指定
 	glutCreateWindow(WindowTitle);  //ウィンドウの作成
 	glutDisplayFunc(Display); //描画時に呼び出される関数を指定する（関数名：Display）
 	glutKeyboardFunc(Keyboard);//キーボード入力時に呼び出される関数を指定する（関数名：Keyboard）
+
+	glutMouseFunc(mouse_on);      //マウスクリック時に呼び出される関数
+	glutMotionFunc(mouse_motion);      //マウスドラッグ解除時に呼び出される関数
 
 	glutIdleFunc(Idle);       //プログラムアイドル状態時に呼び出される関数
 	Initialize(); //初期設定の関数を呼び出す
@@ -346,6 +362,21 @@ void CMain::Initialize(void) {
 
 	findPlane(floor_planar,	floor_v.v0,	floor_v.v1,	floor_v.v2);
 
+	// ディスプレイリストを作成
+	listNumber = glGenLists(1);
+	glNewList(listNumber, GL_COMPILE);
+
+	glEndList();
+	//--------------------------------------
+	// マウスポインタ位置のウィンドウ内の相対的位置への換算用
+	sx = 1.0 / (double)512;
+	sy = 1.0 / (double)512;
+
+	// 回転行列の初期化
+	qrot(rt, cq);
+	//--------------------------------------
+
+
 	//透視変換行列の設定------------------------------
 	glMatrixMode(GL_PROJECTION);//行列モードの設定（GL_PROJECTION : 透視変換行列の設定、GL_MODELVIEW：モデルビュー変換行列）
 	glLoadIdentity();//行列の初期化
@@ -362,7 +393,6 @@ void CMain::Initialize(void) {
 void CMain::Display(void) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); //バッファの消去
 
-
 	t = dt * tn;
 
 	//ViewPointX = -100.0 * cos(omega * t);
@@ -371,18 +401,26 @@ void CMain::Display(void) {
 
 
 	//透視変換行列の設定------------------------------
+#if 0
 	glMatrixMode(GL_PROJECTION);//行列モードの設定（GL_PROJECTION : 透視変換行列の設定、GL_MODELVIEW：モデルビュー変換行列）
 	glLoadIdentity();//行列の初期化
 	gluPerspective(30.0, (double)WindowWidth / (double)WindowHeight, 0.1, 1000.0); //透視投影法の視体積gluPerspactive(th, w/h, near, far);
+#endif
+	//----------------------------------------------
 
+
+	//光源の設定--------------------------------------
+	GLfloat light_position0[] = { 0.0, 50.0, 50.0, 1.0 }; //光源0の座標
+	glLightfv(GL_LIGHT0, GL_POSITION, light_position0); //光源0を
+																				   
 	//視点の設定------------------------------
 	gluLookAt(
 /*
 		ViewPointX, ViewPointY, ViewPointZ, // 視点の位置x,y,z;
 		0.0, 0.0, ViewPointZ,   // 視界の中心位置の参照点座標x,y,z
 */
-		0.0, -160.0, 40, // 視点の位置x,y,z;
-		0.0, 0.0, 0.0,   // 視界の中心位置の参照点座標x,y,z
+		0.0, -100.0, 50.0, // 視点の位置x,y,z;
+		0.0, 100.0, 0.0,   // 視界の中心位置の参照点座標x,y,z
 		0.0, 0.0, 1.0);  //視界の上方向のベクトルx,y,z
 
 	//モデルビュー変換行列の設定--------------------------
@@ -390,6 +428,8 @@ void CMain::Display(void) {
 	glLoadIdentity();//行列の初期化
 	glViewport(0, 0, WindowWidth, WindowHeight);
 	//----------------------------------------------
+
+	glPushMatrix();
 
 	//ステンシルバッファクリア値の設定--------------------------
 	glClearStencil(0);
@@ -410,7 +450,12 @@ void CMain::Display(void) {
 
 	//-----------------------------------
 
-#if 0
+	////回転///////////////////////////////////////////////
+	glMultMatrixd(rt);
+	///////////////////////////////////////////////////////
+
+
+#if 1
 	//球
 	glPushMatrix();
     //glColor3d(1.0, 0.0, 0.0); //色の設定
@@ -494,6 +539,21 @@ void CMain::Display(void) {
 
 	Ground();
 
+	//文字の描画
+	char t_char[20];
+	char t_char2[20];
+
+	strcpy_s(t_char2, "t = ");
+	sprintf_s(t_char, "%d", tn);
+	strcat_s(t_char2, t_char);
+	DISPLAY_TEXT(3, 93, t_char2);
+
+	strcpy_s(t_char2, "p = ");
+	sprintf_s(t_char, "%d", pn);
+	strcat_s(t_char2, t_char);
+	DISPLAY_TEXT(3, 89, t_char2);
+
+
 #if _BITMAP
 	ostringstream fname;
 	int tt = tn + 10000;
@@ -555,7 +615,7 @@ void CMain::Keyboard(unsigned char key, int x, int y) {
 		p[pn].y = -10.0;
 		p[pn].z = 5.0;
 		p[pn].vx = vx * ((double)rand() / (double)RAND_MAX - (double)rand() / (double)RAND_MAX);
-		p[pn].vy = vy * ((double)rand() / (double)RAND_MAX);
+		p[pn].vy = vy * ((double)rand() / (double)RAND_MAX - (double)rand() / (double)RAND_MAX);
 		p[pn].vz = vz * ((double)rand() / (double)RAND_MAX);
 
 		break;
@@ -596,7 +656,6 @@ void CMain::DrawStructure(bool flag) {
 	}
 }
 
-
 //----------------------------------------------------
 // 床平面の方程式と行列の計算
 //----------------------------------------------------
@@ -606,6 +665,9 @@ void CMain::findPlane(
 	GLfloat v1[3],    // 頂点２
 	GLfloat v2[3])    // 頂点３
 {
+
+//外積で法線ベクトルを求めて平面の方程式の係数を求めている
+// Ax+By+Cz+D=0 ABCD->plane[0]-[3]
 	GLfloat vec0[3], vec1[3];
 
 	// Need 2 vectors to find cross product.
@@ -618,24 +680,24 @@ void CMain::findPlane(
 	vec1[2] = v2[2] - v0[2];
 
 	// find cross product to get A, B, and C of plane equation
+	//外積を求めている
 	plane[0] = vec0[1] * vec1[2] - vec0[2] * vec1[1];
 	plane[1] = -(vec0[0] * vec1[2] - vec0[2] * vec1[0]);
 	plane[2] = vec0[0] * vec1[1] - vec0[1] * vec1[0];
-
+	//外積と頂点1との内積を求めている
 	plane[3] = -(plane[0] * v0[0] + plane[1] * v0[1] + plane[2] * v0[2]);
 }
+
+// 平面射影行列の算出--------------------------
 void CMain::shadowMatrix(
-	GLfloat *m,      // 作成する行列のポインタ
+	GLfloat *m,      // 作成する行列のポインタ 4x4
 	GLfloat plane[4],  // 射影する表面の平面方程式の係数
 	GLfloat light[4])  // 光源の同時座標値
 {
 	GLfloat dot;
 
 	// Find dot product between light position vector and ground plane normal.
-	dot = plane[0] * light[0] +
-		plane[1] * light[1] +
-		plane[2] * light[2] +
-		plane[3] * light[3];
+	dot = plane[0] * light[0] +	plane[1] * light[1] +	plane[2] * light[2] +	plane[3] * light[3];
 
 	m[0] = dot - light[0] * plane[0];
 	m[4] = 0.f - light[0] * plane[1];
@@ -700,9 +762,9 @@ void CMain::DrawShadow(void) {
 	glColor4f(0.7f, 0.4f, 0.0f, 1.0f);
 	DrawFloor(true);//床の描画
 
-					/////////////////////////////////////////////
-					//カラー・デプスバッファマスクをセットする
-					//これで以下の内容のピクセルの色の値は、書き込まれない。
+	/////////////////////////////////////////////
+	//カラー・デプスバッファマスクをセットする
+	//これで以下の内容のピクセルの色の値は、書き込まれない。
 	glColorMask(0, 0, 0, 0);
 	glDepthMask(0);
 	/////////////////////////////////////////////
@@ -728,7 +790,8 @@ void CMain::DrawShadow(void) {
 	glStencilFunc(GL_EQUAL, 2, ~0);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glColor4f(0.1f, 0.1f, 0.1f, 0.5f);
+	//glColor4f(0.1f, 0.1f, 0.1f, 0.5f);
+	glColor4f(0.1f, 0.1f, 0.1f, 0.1f);
 	glDisable(GL_DEPTH_TEST);
 	DrawFloor(false);//床の描画
 	glEnable(GL_DEPTH_TEST);
@@ -736,3 +799,142 @@ void CMain::DrawShadow(void) {
 	glDisable(GL_STENCIL_TEST);
 }
 
+void CMain::DRAW_STRING(int x, int y, char *string, void *font = GLUT_BITMAP_TIMES_ROMAN_24) {
+	int len, i;
+	glRasterPos2f(x, y);
+	len = (int)strlen(string);
+	for (i = 0; i < len; i++) {
+		glutBitmapCharacter(font, string[i]);
+	}
+}
+void CMain::DISPLAY_TEXT(int x, int y, char *string) {
+	glDisable(GL_LIGHTING);
+	glDisable(GL_LIGHT0);
+
+	glPushAttrib(GL_ENABLE_BIT);
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadIdentity();
+	gluOrtho2D(0, 100, 0, 100);
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();
+	glColor3f(0.0, 0.0, 0.0);
+	glCallList(list);
+	glPopMatrix();
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
+	glPopAttrib();
+	glMatrixMode(GL_MODELVIEW);
+	list = glGenLists(1);
+	glNewList(list, GL_COMPILE);
+
+	DRAW_STRING(x, y, string, GLUT_BITMAP_TIMES_ROMAN_24);
+	glEndList();
+
+	glEnable(GL_LIGHTING);
+	glEnable(GL_LIGHT0);
+}
+
+//----------------------------------------------------
+// マウスドラッグ時
+//----------------------------------------------------
+void CMain::mouse_motion(int x, int y) {
+	double dx, dy, a;
+
+	// マウスポインタの位置のドラッグ開始位置からの変位
+	dx = (x - cx) * sx;
+	dy = (y - cy) * sy;
+
+	// マウスポインタの位置のドラッグ開始位置からの距離
+	a = sqrt(dx * dx + dy * dy);
+
+	if (a != 0.0)
+	{
+		// マウスのドラッグに伴う回転のクォータニオン dq を求める
+		double ar = a * SCALE * 0.5;
+		double as = sin(ar) / a;
+		double dq[4] = { cos(ar), dy * as, dx * as, 0.0 };
+
+		// 回転の初期値 cq に dq を掛けて回転を合成
+		qmul(tq, dq, cq);
+
+		// クォータニオンから回転の変換行列を求める
+		qrot(rt, tq);
+	}
+}
+//----------------------------------------------------
+// マウスクリック時
+//----------------------------------------------------
+void CMain::mouse_on(int button, int state, int x, int y)
+{
+	switch (button) {
+	case 0:
+		switch (state) {
+		case 0:
+			// ドラッグ開始点を記録
+			cx = x;
+			cy = y;
+			break;
+		case 1:
+			// 回転の保存
+			cq[0] = tq[0];
+			cq[1] = tq[1];
+			cq[2] = tq[2];
+			cq[3] = tq[3];
+			break;
+		default:
+			break;
+		}
+		break;
+	default:
+		break;
+	}
+	cout << x << " " << y << endl;
+}
+
+//////////////////////////////////////////////////////////////////////////
+// マウスドラッグによる回転
+//////////////////////////////////////////////////////////////////////////
+// クォータニオンの積 r <- p x q
+void CMain::qmul(double r[], const double p[], const double q[])
+{
+	r[0] = p[0] * q[0] - p[1] * q[1] - p[2] * q[2] - p[3] * q[3];
+	r[1] = p[0] * q[1] + p[1] * q[0] + p[2] * q[3] - p[3] * q[2];
+	r[2] = p[0] * q[2] - p[1] * q[3] + p[2] * q[0] + p[3] * q[1];
+	r[3] = p[0] * q[3] + p[1] * q[2] - p[2] * q[1] + p[3] * q[0];
+}
+
+// 回転の変換行列 r <- クォータニオン q
+void CMain::qrot(double r[], double q[]) {
+	double x2 = q[1] * q[1] * 2.0;
+	double y2 = q[2] * q[2] * 2.0;
+	double z2 = q[3] * q[3] * 2.0;
+	double xy = q[1] * q[2] * 2.0;
+	double yz = q[2] * q[3] * 2.0;
+	double zx = q[3] * q[1] * 2.0;
+	double xw = q[1] * q[0] * 2.0;
+	double yw = q[2] * q[0] * 2.0;
+	double zw = q[3] * q[0] * 2.0;
+
+	r[0] = 1.0 - y2 - z2;
+	r[1] = xy + zw;
+	r[2] = zx - yw;
+	r[4] = xy - zw;
+	r[5] = 1.0 - z2 - x2;
+	r[6] = yz + xw;
+	r[8] = zx + yw;
+	r[9] = yz - xw;
+	r[10] = 1.0 - x2 - y2;
+	r[3] = r[7] = r[11] = r[12] = r[13] = r[14] = 0.0;
+	r[15] = 1.0;
+}
+
+void CMain::mouse_wheel(float z) {
+	camera_z_pos += z;
+
+	if (camera_z_pos < 0.0f)
+	{
+		camera_z_pos = 0.0f;
+	}
+}
