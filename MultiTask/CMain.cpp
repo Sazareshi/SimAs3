@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "CMain.h"
+#include "solveSimultaneousEquations.h"
 
 
 CMain::CMain(){
@@ -327,6 +328,38 @@ void CMain::set_panel_tip_txt()
 //#################### OPEN GL ################################################
 void CMain::ActOpenGL(void) {
 
+//Temp Test
+	double **M = new double*[3];
+	for (int i = 0; i<3; i++) {
+		M[i] = new double[4];
+	}
+
+	M[0][0] = 4.0;  M[0][1] = 2.0;  M[0][2] = 3.0;  M[0][3] = 1.0;
+	M[1][0] = 2.0;  M[1][1] = 1.0;  M[1][2] = 1.0;  M[1][3] = 2.0;
+	M[2][0] = -2.0; M[2][1] = -2.0; M[2][2] = 0.0;  M[2][3] = -1.0;
+
+
+	std::cout << "元の行列" << std::endl;
+	readMatrix(3, 4, M);
+
+	double *ans = new double[3];
+
+	solveSimultaneousEquations(3, M, ans);
+
+	std::cout << "解" << std::endl;
+	readMatrix(3, ans);
+
+	// 動的に確保した領域をそれぞれ解放
+	for (int i = 0; i<3; ++i) delete[] M[i];
+	delete[] M;
+	delete[] ans;
+
+	int a;
+	std::cin >> a;
+
+//Temp Test
+
+	
 	srand((unsigned)time(NULL));
 
 	if (_Bitmap) _mkdir("bitmap"); //bmpファイル保存用のフォルダの作成

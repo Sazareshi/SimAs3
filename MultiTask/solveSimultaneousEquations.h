@@ -42,7 +42,7 @@ int solveSimultaneousEquations(int n, double **M, double *ans) {
 		if (abs(max) < 1E-12) {
 			for (int i = 0; i < n; i++) ans[i] = 0;
 			std::cout << "前進消去時のピボットが小さすぎます（方程式の数が足りない可能性があります）" << std::endl;
-			_RPT0(_CRT_WARN, "前進消去時のピボットが小さすぎます（方程式の数が足りない可能性があります）\n");
+			_RPT0(_CRT_ERROR, "前進消去時のピボットが小さすぎます（方程式の数が足りない可能性があります）\n");
 			return 0;
 		}
 		if (p != k) {
@@ -69,7 +69,7 @@ int solveSimultaneousEquations(int n, double **M, double *ans) {
 		}
 		if (abs(M[k][k]) < 1E-12) {
 			std::cout << "前進消去時のピボットが小さすぎます（方程式の数が多すぎる可能性があります）" << std::endl;
-			_RPT0(_CRT_WARN, "前進消去時のピボットが小さすぎます（方程式の数が多すぎる可能性があります）");
+			_RPT0(_CRT_ERROR, "前進消去時のピボットが小さすぎます（方程式の数が多すぎる可能性があります）");
 			ans[k] = 0;
 		}
 		else {
