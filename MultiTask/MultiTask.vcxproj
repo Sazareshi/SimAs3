@@ -161,6 +161,9 @@
     <ClInclude Include="..\bullet\src\GL\gl_screenshot.h" />
     <ClInclude Include="CActor.h" />
     <ClInclude Include="CMain.h" />
+    <ClInclude Include="CRK4.h" />
+    <ClInclude Include="CVector3.h" />
+    <ClInclude Include="solveSimultaneousEquations.h" />
     <ClInclude Include="ThreadObj.h" />
     <ClInclude Include="Helper.h" />
     <ClInclude Include="MultiTask.h" />
@@ -171,6 +174,8 @@
   <ItemGroup>
     <ClCompile Include="CActor.cpp" />
     <ClCompile Include="CMain.cpp" />
+    <ClCompile Include="CRK4.cpp" />
+    <ClCompile Include="CVector3.cpp" />
     <ClCompile Include="ThreadObj.cpp" />
     <ClCompile Include="Helper.cpp" />
     <ClCompile Include="MultiTask.cpp" />
