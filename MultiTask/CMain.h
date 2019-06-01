@@ -122,6 +122,7 @@ public:
 	static void mouse_motion(int x, int y);
 	static void mouse_on(int button, int state, int x, int y);
 	static void mouse_wheel(float z);
+	static void mouse_wheel(int wheel_number, int direction, int x, int y);
 
 	static void ActOpenGL(void);
 	

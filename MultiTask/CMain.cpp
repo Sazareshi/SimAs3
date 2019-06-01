@@ -6,13 +6,8 @@
 CMain::CMain(){
 	WindowPositionX = 700;
 	WindowPositionY = 100;
-	WindowWidth = 512;
-	WindowHeight = 512;
-	//dummy_argc = 1;
-	//argv = WindowTitle;
-	//dummy_argv = &argv;
-
-
+	WindowWidth = 800;
+	WindowHeight = 600;
 }
 CMain::~CMain(){
 }
@@ -328,43 +323,10 @@ void CMain::set_panel_tip_txt()
 //#################### OPEN GL ################################################
 void CMain::ActOpenGL(void) {
 
-//Temp Test
-	double **M = new double*[3];
-	for (int i = 0; i<3; i++) {
-		M[i] = new double[4];
-	}
-
-	M[0][0] = 4.0;  M[0][1] = 2.0;  M[0][2] = 3.0;  M[0][3] = 1.0;
-	M[1][0] = 2.0;  M[1][1] = 1.0;  M[1][2] = 1.0;  M[1][3] = 2.0;
-	M[2][0] = -2.0; M[2][1] = -2.0; M[2][2] = 0.0;  M[2][3] = -1.0;
-
-
-	std::cout << "元の行列" << std::endl;
-	readMatrix(3, 4, M);
-
-	double *ans = new double[3];
-
-	solveSimultaneousEquations(3, M, ans);
-
-	std::cout << "解" << std::endl;
-	readMatrix(3, ans);
-
-	// 動的に確保した領域をそれぞれ解放
-	for (int i = 0; i<3; ++i) delete[] M[i];
-	delete[] M;
-	delete[] ans;
-
-	int a;
-	std::cin >> a;
-
-//Temp Test
-
-	
 	srand((unsigned)time(NULL));
 
 	if (_Bitmap) _mkdir("bitmap"); //bmpファイル保存用のフォルダの作成
 
-//	glutInit(&dummy_argc, dummy_argv);//環境の初期化
 	glutInit(&__argc, __argv);//環境の初期化
 	glutInitWindowPosition(WindowPositionX, WindowPositionY);//ウィンドウの位置の指定
 	glutInitWindowSize(WindowWidth, WindowHeight); //ウィンドウサイズの指定
@@ -375,6 +337,7 @@ void CMain::ActOpenGL(void) {
 
 	glutMouseFunc(mouse_on);      //マウスクリック時に呼び出される関数
 	glutMotionFunc(mouse_motion);      //マウスドラッグ解除時に呼び出される関数
+	glutMouseWheelFunc(mouse_wheel);
 
 	glutIdleFunc(Idle);       //プログラムアイドル状態時に呼び出される関数
 	Initialize(); //初期設定の関数を呼び出す
@@ -428,9 +391,9 @@ void CMain::Display(void) {
 
 	t = dt * tn;
 
-	//ViewPointX = -100.0 * cos(omega * t);
-	//ViewPointY = -100.0 * sin(omega * t);
-	//ViewPointY += (-50.0 - ViewPointY) * 0.001;
+	ViewPointX = -100.0 * cos(omega * t);
+	ViewPointY = -100.0 * sin(omega * t);
+	ViewPointY += (-50.0 - ViewPointY) * 0.001;
 
 
 	//透視変換行列の設定------------------------------
@@ -448,12 +411,14 @@ void CMain::Display(void) {
 																				   
 	//視点の設定------------------------------
 	gluLookAt(
-/*
+
 		ViewPointX, ViewPointY, ViewPointZ, // 視点の位置x,y,z;
 		0.0, 0.0, ViewPointZ,   // 視界の中心位置の参照点座標x,y,z
+
+/*
+		0.0, -300.0, 100.0, // 視点の位置x,y,z;
+		0.0, 0.0, 0.0,   // 視界の中心位置の参照点座標x,y,z
 */
-		0.0, -100.0, 50.0, // 視点の位置x,y,z;
-		0.0, 100.0, 0.0,   // 視界の中心位置の参照点座標x,y,z
 		0.0, 0.0, 1.0);  //視界の上方向のベクトルx,y,z
 
 	//モデルビュー変換行列の設定--------------------------
@@ -488,7 +453,7 @@ void CMain::Display(void) {
 	///////////////////////////////////////////////////////
 
 
-#if 1
+#if 0
 	//球
 	glPushMatrix();
     //glColor3d(1.0, 0.0, 0.0); //色の設定
@@ -536,7 +501,7 @@ void CMain::Display(void) {
 	glEnd();
 	glPopMatrix();
 #endif
-#if 0
+#if 1
 	for (int i = 1; i <= pn; i++) {
 		p[i].vx += ax * dt;
 		p[i].vy += ay * dt;
@@ -621,8 +586,8 @@ void CMain::Idle() {
 // 大地の描画
 //----------------------------------------------------
 void CMain::Ground(void) {
-	double ground_max_x = 300.0;
-	double ground_max_y = 300.0;
+	double ground_max_x = 100.0;
+	double ground_max_y = 100.0;
 	glColor3d(0.8, 0.8, 0.8);  // 大地の色
 	glBegin(GL_LINES);
 	for (double ly = -ground_max_y; ly <= ground_max_y; ly += 10.0) {
@@ -970,4 +935,19 @@ void CMain::mouse_wheel(float z) {
 	{
 		camera_z_pos = 0.0f;
 	}
+}
+void CMain::mouse_wheel(int wheel_number, int direction, int x, int y) {
+	
+	if (direction == 1) { 
+		camera_z_pos += 1.0;
+	}
+	else {
+		camera_z_pos -= 1.0; 
+	}
+
+	if (camera_z_pos < 0.0f)
+	{
+		camera_z_pos = 0.0f;
+	}
+
 }

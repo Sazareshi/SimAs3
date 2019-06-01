@@ -2,6 +2,7 @@
 #include "CVector3.h"
 #include "CRK4.h"
 
+//##### RK4
 //加速度ベクトル　継承先で再定義する
 Vector3 RK4::A(double, Vector3&, Vector3&) {
 	return r.clone();
@@ -40,3 +41,52 @@ void RK4::timeEvolution(double t) {
 
 }
 
+//##### RK4_NBODY
+//加速度ベクトル　継承先で再定義する
+void RK4_Nbody::A(double t, Vector3 *rs, Vector3 *vs, Vector3 *out_vs) {
+	for (int i = 0; i < N; i++) {
+		out_vs[i] = vs[i];
+	}
+}
+//速度ベクトル
+void RK4_Nbody::V(double t, Vector3 *rs, Vector3 *vs, Vector3 *out_vs) {
+	for (int i = 0; i < N; i++) {
+		out_vs[i] = vs[i];
+	}
+}
+//ルンゲ・クッタ法による時間発展
+void RK4_Nbody::timeEvolution(double t) {
+	//１段目
+	V(t, rs, vs, v1s);
+	A(t, rs, vs, a1s);
+	for (int i = 0; i < N; i++) {
+		_v1s[i].set(rs[i].x + v1s[i].x*dt / 2.0, rs[i].y + v1s[i].y*dt / 2.0, rs[i].z + v1s[i].z*dt / 2.0);
+		_a1s[i].set(vs[i].x + a1s[i].x*dt / 2.0, vs[i].y + a1s[i].y*dt / 2.0, vs[i].z + a1s[i].z*dt / 2.0);
+	}
+	//２段目
+	V(t + dt / 2.0, _v1s, _a1s, v2s);
+	A(t + dt / 2.0, _v1s, _a1s, a2s);
+	for (int i = 0; i < N; i++) {
+		_v2s[i].set(rs[i].x + v2s[i].x*dt / 2.0, rs[i].y + v2s[i].y*dt / 2.0, rs[i].z + v2s[i].z*dt / 2.0);
+		_a2s[i].set(vs[i].x + a2s[i].x*dt / 2.0, vs[i].y + a2s[i].y*dt / 2.0, vs[i].z + a2s[i].z*dt / 2.0);
+	}
+	//３段目
+	V(t + dt / 2.0, _v2s, _a2s, v3s);
+	A(t + dt / 2.0, _v2s, _a2s, a3s);
+	for (int i = 0; i < N; i++) {
+		_v3s[i].set(rs[i].x + v3s[i].x*dt, rs[i].y + v3s[i].y*dt, rs[i].z + v3s[i].z*dt);
+		_a3s[i].set(vs[i].x + a3s[i].x*dt, vs[i].y + a3s[i].y*dt, vs[i].z + a3s[i].z*dt);
+	}
+	//４段目
+	V(t + dt, _v3s, _a3s, v4s);
+	A(t + dt, _v3s, _a3s, a4s);
+	for (int i = 0; i < N; i++) {
+		drs[i].x = dt / 6.0 * (v1s[i].x + 2.0 * v2s[i].x + 2.0 * v3s[i].x + v4s[i].x);
+		drs[i].y = dt / 6.0 * (v1s[i].y + 2.0 * v2s[i].y + 2.0 * v3s[i].y + v4s[i].y);
+		drs[i].z = dt / 6.0 * (v1s[i].z + 2.0 * v2s[i].z + 2.0 * v3s[i].z + v4s[i].z);
+		dvs[i].x = dt / 6.0 * (a1s[i].x + 2.0 * a2s[i].x + 2.0 * a3s[i].x + a4s[i].x);
+		dvs[i].y = dt / 6.0 * (a1s[i].y + 2.0 * a2s[i].y + 2.0 * a3s[i].y + a4s[i].y);
+		dvs[i].z = dt / 6.0 * (a1s[i].z + 2.0 * a2s[i].z + 2.0 * a3s[i].z + a4s[i].z);
+	}
+
+}
