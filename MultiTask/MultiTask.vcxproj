@@ -159,8 +159,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\bullet\src\GL\gl_screenshot.h" />
-    <ClInclude Include="CActor.h" />
-    <ClInclude Include="CMain.h" />
+    <ClInclude Include="CPly.h" />
+    <ClInclude Include="CPub.h" />
     <ClInclude Include="CRK4.h" />
     <ClInclude Include="CVector3.h" />
     <ClInclude Include="solveSimultaneousEquations.h" />
@@ -172,8 +172,8 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="CActor.cpp" />
-    <ClCompile Include="CMain.cpp" />
+    <ClCompile Include="CPly.cpp" />
+    <ClCompile Include="CPub.cpp" />
     <ClCompile Include="CRK4.cpp" />
     <ClCompile Include="CVector3.cpp" />
     <ClCompile Include="ThreadObj.cpp" />
