@@ -37,6 +37,8 @@ gl_screenshot CPub::gs; //bmpファイルの出力
 Vector3 CPub::ViewPoint(0.0, -100.0, 200.0);
 Vector3 CPub::Pos_Sphere(0.0,0.0,0.0);
 Vector3 CPub::Pos_Box(0.0, 0.0, 40.0);
+MOB_Sphere CPub::Sphere0(0.0, 0.0, 0.0);
+MOB_Box CPub::Box0(0.0, 0.0, 40.0);
 double CPub::hanpatu = 0.9;
 
 //直方体の定義
@@ -380,15 +382,15 @@ void CPub::Display(void) {
 	//-----------------------------------
 	
 	//球 描画
-	Pos_Sphere.x = 10.0 * cos(omega * t);
-	Pos_Sphere.y = 10.0 * sin(omega * t);
+	Sphere0.r.x = 10.0 * cos(omega * t);
+	Sphere0.r.y = 10.0 * sin(omega * t);
 	
 	glPushMatrix();
 	glMaterialfv(GL_FRONT, GL_AMBIENT, ms_ruby.ambient);
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, ms_ruby.diffuse);
 	glMaterialfv(GL_FRONT, GL_SPECULAR, ms_ruby.specular);
 	glMaterialfv(GL_FRONT, GL_SHININESS, &ms_ruby.shininess);
-	glTranslated(Pos_Sphere.x, Pos_Sphere.y, Pos_Sphere.z);//平行移動値の設定
+	glTranslated(Sphere0.r.x, Sphere0.r.y, Sphere0.r.z);//平行移動値の設定
 	glutSolidSphere(4.0, 20, 20);//引数：(半径, Z軸まわりの分割数, Z軸に沿った分割数)
 	glPopMatrix();
 
@@ -396,7 +398,7 @@ void CPub::Display(void) {
 
 	glPushMatrix();
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, green);
-	glTranslated(Pos_Box.x, Pos_Box.y, Pos_Box.z);//平行移動値の設定
+	glTranslated(Box0.r.x, Box0.r.y, Box0.r.z);//平行移動値の設定
 	glutSolidCube(3.0);//引数：(一辺の長さ)
 	glPopMatrix();
 
@@ -407,8 +409,8 @@ void CPub::Display(void) {
 	glLineWidth(2.0);
 
 	glBegin(GL_LINES);
-	glVertex3d(Pos_Sphere.x, Pos_Sphere.y, Pos_Sphere.z);
-	glVertex3d(Pos_Box.x, Pos_Box.y, Pos_Box.z);
+	glVertex3d(Sphere0.r.x, Sphere0.r.y, Sphere0.r.z);
+	glVertex3d(Box0.r.x, Box0.r.y, Box0.r.z);
 	glEnd();
 
 	//陰影OFF-----------------------------

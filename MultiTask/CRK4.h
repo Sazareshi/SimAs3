@@ -25,9 +25,9 @@ public:
 	//ディストラクタ
 	~RK4() {}
 	//加速度ベクトルを与えるメソッド　　継承先で再定義する
-	virtual Vector3 A(double, Vector3&, Vector3&);
+	virtual Vector3 A(double t, Vector3& r, Vector3& v);
 	//速度ベクトルを与えるメソッド
-	Vector3 V(double, Vector3&, Vector3&);
+	virtual Vector3 V(double t, Vector3& r, Vector3& v);
 	//時間発展を計算するメソッド
 	void timeEvolution(double t);
 };
@@ -72,9 +72,9 @@ public:
 		delete[] v4s; delete[] a4s;
 	}
 	//加速度ベクトルを与えるメソッド
-	void A(double t, Vector3 *rs, Vector3 *vs, Vector3 *out_as);
+	virtual void A(double t, Vector3 *rs, Vector3 *vs, Vector3 *out_as);
 	//速度ベクトルを与えるメソッド
-	void V(double t, Vector3 *rs, Vector3 *vs, Vector3 *out_vs);
+	virtual void V(double t, Vector3 *rs, Vector3 *vs, Vector3 *out_vs);
 	//時間発展を計算するメソッド
 	void timeEvolution(double t);
 };

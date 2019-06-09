@@ -2,6 +2,7 @@
 #include "ThreadObj.h"
 #include <time.h>
 #include "CVector3.h"
+#include "CRK4.h"
 
 #define _BITMAP 0
 #define SCALE (2.0 * 3.14159265358979323846)  // マウスの相対位置→回転角の換算係数
@@ -24,7 +25,53 @@ typedef struct _QUADS_VERTEX {
 	GLfloat v3[3];
 }QUADS_VERTEX;
 
+class MOB
+{
+public:
+	MOB() { omega = 0.0, l = 1.0, r.x=0.0, r.y = 0.0, r.z = 0.0; };
+	MOB(double _x, double _y, double _z) { omega = 0.0, l = 1.0, r.x = _x, r.y = _y, r.z = _z; };
+	~MOB() {};
+	Vector3 r, v, a;
+	double omega;
+	double l;
+	double _t;
 
+	virtual Vector3 r_function(double t) {
+		return Vector3(l * sin(omega * t), 0, r.z);
+	};
+	virtual Vector3 v_function(double t) {
+		return Vector3(l * omega * cos(omega * t), 0, 0);
+	};
+	virtual Vector3 a_function(double t) {
+		return Vector3(-l * omega * omega * sin(omega * t), 0, 0);
+	};
+	virtual void move(Vector3 pos) { r.copy(pos); };
+};
+class MOB_Sphere : public MOB
+{
+public:
+	MOB_Sphere() { omega = 0.0, l = 1.0, r.x = 0.0, r.y = 0.0, r.z = 0.0; };
+	MOB_Sphere(double _x, double _y, double _z) { omega = 0.0, l = 1.0, r.x = _x, r.y = _y, r.z = _z; };
+};
+class MOB_Box : public MOB
+{
+public:
+	MOB_Box() { omega = 0.0, l = 1.0, r.x = 0.0, r.y = 0.0, r.z = 0.0; };
+	MOB_Box(double _x, double _y, double _z) { omega = 0.0, l = 1.0, r.x = _x, r.y = _y, r.z = _z; };
+};
+
+class RK4_Sim01 : public RK4
+{
+public:
+	RK4_Sim01() {};
+	~RK4_Sim01() {};
+
+	Vector3 L_;	//ロープのベクトル
+	double S;	//ロープ張力
+
+	Vector3 A(double t, Vector3& r, Vector3& v) { return r; };
+
+};
 class CPub :	public CThreadObj
 {
 public:
@@ -51,8 +98,11 @@ public:
 	static Vector3 ViewPoint;
 
 	//----------------------------------------------------
-	// オブジェクトの位置定義
+	// オブジェクト定義
 	//----------------------------------------------------
+	
+	static MOB_Sphere Sphere0;
+	static MOB_Box Box0;
 	static Vector3 Pos_Sphere;
 	static Vector3 Pos_Box;
 		//----------------------------------------------------
@@ -117,14 +167,11 @@ public:
 	static void qrot(double r[], double q[]);
 	static void mouse_motion(int x, int y);
 	static void mouse_on(int button, int state, int x, int y);
-	static void mouse_wheel(float z);
 	static void mouse_wheel(int wheel_number, int direction, int x, int y);
 
 	static void ActOpenGL(void);
 	
 //OPEN GL---------------------------------------------
-	static void move_sphere(Vector3 pos) { Pos_Sphere.copy(pos); };
-	static void move_box(Vector3 pos) { Pos_Box.copy(pos); };
 
 };
 
