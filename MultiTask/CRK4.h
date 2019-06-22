@@ -3,6 +3,7 @@
 #define __RK4_H__INCLUDED
 
 #include "CVector3.h"
+
 class RK4 {
 private:
 public:
@@ -29,7 +30,7 @@ public:
 	//速度ベクトルを与えるメソッド
 	virtual Vector3 V(double t, Vector3& r, Vector3& v);
 	//時間発展を計算するメソッド
-	void timeEvolution(double t);
+	virtual void timeEvolution(double t);
 };
 
 #endif // __RK4_H__INCLUDED
@@ -80,5 +81,6 @@ public:
 };
 
 #endif // __RK4_Nbody_H__INCLUDED
+
 
 

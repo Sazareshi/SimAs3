@@ -2,80 +2,99 @@
 #include "CPub.h"
 #include "solveSimultaneousEquations.h"
 
+/* CPUB */
+//----------------------------------------------------
+// グローバル変数
+//----------------------------------------------------
+CPub* pPubObj;
 
+//----------------------------------------------------
+// メンバー関数
+//----------------------------------------------------
 CPub::CPub(){
+	pPubObj = this;
+	
+	pBox0 = new MOB_Box;
+	pSphere0 = new MOB_Sphere;
+
 	WindowPositionX = 600;
 	WindowPositionY = 100;
 	WindowWidth = 800;
 	WindowHeight = 600;
+	pub_com.vref_box.set(0.0, 0.0, 0.0);
 }
 CPub::~CPub(){
+	delete pSphere0;
+	delete pBox0;
 }
 
-int CPub::WindowPositionX;					//生成するウィンドウ位置のX座標
-int CPub::WindowPositionY;					//生成するウィンドウ位置のY座標
-int CPub::WindowWidth;						//生成するウィンドウの幅
-int CPub::WindowHeight;						//生成するウィンドウの高さ
-
-char CPub::WindowTitle[128] = "世界の始まり"; //ウィンドウのタイト
-GLfloat CPub::floor_planar[4];
-GLfloat CPub::floor_s = 50.0f;
-GLfloat CPub::pM[16];
-GLfloat CPub::lightpos[4] = { -30, -100, 50, 1 };
-
-QUADS_VERTEX CPub::floor_v = { { floor_s,  floor_s, -1.0f },{ -floor_s,  floor_s, -1.0f },{ -floor_s, -floor_s, -1.0f },{ floor_s, -floor_s, -1.0f }, };
-
-bool CPub::_Bitmap = false;
-
-double CPub::PI = acos(-1.0);
-int CPub::tn = 0;
-double CPub::t = 0;
-double CPub::dt = 0.005;
-double CPub::omega = 2.0 * PI / 10.0;
-gl_screenshot CPub::gs; //bmpファイルの出力
-
-Vector3 CPub::ViewPoint(0.0, -100.0, 200.0);
-Vector3 CPub::Pos_Sphere(0.0,0.0,0.0);
-Vector3 CPub::Pos_Box(0.0, 0.0, 40.0);
-MOB_Sphere CPub::Sphere0(0.0, 0.0, 0.0);
-MOB_Box CPub::Box0(0.0, 0.0, 40.0);
-double CPub::hanpatu = 0.9;
-
-//直方体の定義
-GLdouble CPub::vertex[][3] = {{ 0.0, 0.0, 0.0 },{ 2.0, 0.0, 0.0 },{ 2.0, 2.0, 0.0 },{ 0.0, 2.0, 0.0 },{ 0.0, 0.0, 30.0 },{ 2.0, 0.0, 30.0 },{ 2.0, 2.0, 30.0 },{ 0.0, 2.0, 30.0 }};
-//面の定義
-int CPub::face[][4] = {{ 0, 1, 2, 3 },{ 1, 5, 6, 2 },{ 5, 4, 7, 6 },{ 4, 0, 3, 7 },{ 4, 5, 1, 0 },{ 3, 2, 6, 7 }};
-//面の法線ベクトル
-GLdouble CPub::normal[][3] = {{ 0.0, 0.0,-1.0 },{ 1.0, 0.0, 0.0 },{ 0.0, 0.0, 1.0 },{ -1.0, 0.0, 0.0 },{ 0.0,-1.0, 0.0 },{ 0.0, 1.0, 0.0 }};
-
-int CPub::cx, CPub::cy;                // ドラッグ開始位置
-double CPub::sx, CPub::sy;              // マウスの絶対位置→ウィンドウ内での相対位置の換算係数
-double CPub::cq[4] = { 1.0, 0.0, 0.0, 0.0 };  // 回転の初期値 (クォータニオン)
-double CPub::tq[4];              // ドラッグ中の回転 (クォータニオン)
-double CPub::rt[16];              // 回転の変換行列
-
-unsigned int CPub::listNumber;
-float CPub::camera_z_pos = 50.0;
-
-
 //----------------------------------------------------
-// 色の定義
+// Static メンバー変数
 //----------------------------------------------------
-//jade(翡翠)
-MaterialStruct CPub::ms_jade = {{ 0.135,     0.2225,   0.1575,   1.0 },{ 0.54,      0.89,     0.63,     1.0 },{ 0.316228,  0.316228, 0.316228, 1.0 },12.8 };
-//ruby(ルビー)
-MaterialStruct CPub::ms_ruby = {{ 0.1745,   0.01175,  0.01175,   1.0 },{ 0.61424,  0.04136,  0.04136,   1.0 },{ 0.727811, 0.626959, 0.626959,  1.0 },76.8 };
+#if 1
+	int CPub::WindowPositionX;					//生成するウィンドウ位置のX座標
+	int CPub::WindowPositionY;					//生成するウィンドウ位置のY座標
+	int CPub::WindowWidth;						//生成するウィンドウの幅
+	int CPub::WindowHeight;						//生成するウィンドウの高さ
 
-GLfloat CPub::red[] = { 0.8, 0.2, 0.2, 1.0 }; //赤色
-GLfloat CPub::green[] = { 0.2, 0.8, 0.2, 1.0 };//緑色
-GLfloat CPub::blue[] = { 0.2, 0.2, 0.8, 1.0 };//青色
-GLfloat CPub::yellow[] = { 0.8, 0.8, 0.2, 1.0 };//黄色
-GLfloat CPub::white[] = { 1.0, 1.0, 1.0, 1.0 };//白色
-GLfloat CPub::shininess = 30.0;//光沢の強さ
-//-----------------------------------------
+	char CPub::WindowTitle[128] = "世界の始まり"; //ウィンドウのタイト
+	GLfloat CPub::floor_planar[4];
+	GLfloat CPub::floor_s = 50.0f;
+	GLfloat CPub::pM[16];
+	GLfloat CPub::lightpos[4] = { -30, -100, 50, 1 };
 
-int CPub::list;
+	QUADS_VERTEX CPub::floor_v = { { floor_s,  floor_s, -1.0f },{ -floor_s,  floor_s, -1.0f },{ -floor_s, -floor_s, -1.0f },{ floor_s, -floor_s, -1.0f }, };
 
+	bool CPub::_Bitmap = false;
+
+	double CPub::PI = acos(-1.0);
+	int CPub::tn = 0;
+	double CPub::t = 0;
+	double CPub::dt = 0.005;
+	double CPub::omega = 2.0 * PI/5.0;
+	gl_screenshot CPub::gs; //bmpファイルの出力
+
+	Vector3 CPub::ViewPoint(0.0, -100.0, 200.0);
+	MOB_Sphere* CPub::pSphere0;
+	MOB_Box* CPub::pBox0;
+	double CPub::hanpatu = 0.9;
+
+	//直方体の定義
+	GLdouble CPub::vertex[][3] = { { 0.0, 0.0, 0.0 },{ 2.0, 0.0, 0.0 },{ 2.0, 2.0, 0.0 },{ 0.0, 2.0, 0.0 },{ 0.0, 0.0, 30.0 },{ 2.0, 0.0, 30.0 },{ 2.0, 2.0, 30.0 },{ 0.0, 2.0, 30.0 } };
+	//面の定義
+	int CPub::face[][4] = { { 0, 1, 2, 3 },{ 1, 5, 6, 2 },{ 5, 4, 7, 6 },{ 4, 0, 3, 7 },{ 4, 5, 1, 0 },{ 3, 2, 6, 7 } };
+	//面の法線ベクトル
+	GLdouble CPub::normal[][3] = { { 0.0, 0.0,-1.0 },{ 1.0, 0.0, 0.0 },{ 0.0, 0.0, 1.0 },{ -1.0, 0.0, 0.0 },{ 0.0,-1.0, 0.0 },{ 0.0, 1.0, 0.0 } };
+
+	int CPub::cx, CPub::cy;                // ドラッグ開始位置
+	double CPub::sx, CPub::sy;              // マウスの絶対位置→ウィンドウ内での相対位置の換算係数
+	double CPub::cq[4] = { 1.0, 0.0, 0.0, 0.0 };  // 回転の初期値 (クォータニオン)
+	double CPub::tq[4];              // ドラッグ中の回転 (クォータニオン)
+	double CPub::rt[16];              // 回転の変換行列
+
+	unsigned int CPub::listNumber;
+	float CPub::camera_z_pos = 50.0;
+
+	bool CPub::bGLactive;
+
+	//----------------------------------------------------
+	// 色の定義
+	//----------------------------------------------------
+	//jade(翡翠)
+	MaterialStruct CPub::ms_jade = { { 0.135,     0.2225,   0.1575,   1.0 },{ 0.54,      0.89,     0.63,     1.0 },{ 0.316228,  0.316228, 0.316228, 1.0 },12.8 };
+	//ruby(ルビー)
+	MaterialStruct CPub::ms_ruby = { { 0.1745,   0.01175,  0.01175,   1.0 },{ 0.61424,  0.04136,  0.04136,   1.0 },{ 0.727811, 0.626959, 0.626959,  1.0 },76.8 };
+
+	GLfloat CPub::red[] = { 0.8, 0.2, 0.2, 1.0 }; //赤色
+	GLfloat CPub::green[] = { 0.2, 0.8, 0.2, 1.0 };//緑色
+	GLfloat CPub::blue[] = { 0.2, 0.2, 0.8, 1.0 };//青色
+	GLfloat CPub::yellow[] = { 0.8, 0.8, 0.2, 1.0 };//黄色
+	GLfloat CPub::white[] = { 1.0, 1.0, 1.0, 1.0 };//白色
+	GLfloat CPub::shininess = 30.0;//光沢の強さ
+	//-----------------------------------------
+
+	int CPub::list;
+#endif
 
 LRESULT CALLBACK  CPub::PanelProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp) {
 	int n;
@@ -158,6 +177,54 @@ LRESULT CALLBACK  CPub::PanelProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp) {
 	}
 	return 0;
 };
+
+void CPub::routine_work(void *param) {
+
+	//球の動作
+	pSphere0->r.x = 10.0 * cos(omega * t);
+	pSphere0->r.y = 10.0 * sin(omega * t);
+
+	//吊点の動作
+
+	Vector3 tmp_a = pBox0->A(pPubObj->pub_com.aref_box);
+	pBox0->dt = dt;
+	pBox0->timeEvolution(t);
+
+	pBox0->dr.x = dt * pBox0->v.x;
+	pBox0->dv.x = dt * pBox0->a.x;
+
+
+	pBox0->r.add(pBox0->dr);
+	pBox0->v.add(pBox0->dv);
+
+	t = t + dt;
+	tn++;
+
+	if ((bGLactive)&& (tn & 0x08)){
+		glutPostRedisplay(); //glutDisplayFunc()を１回実行する
+	}
+	ws << L"I am working!" << *(inf.psys_counter);
+	tweet2owner(ws.str()); ws.str(L""); ws.clear();
+
+};
+
+void CPub::init_task(void *pobj) {
+
+	dt = double(inf.cycle_ms) / 1000.0;
+	pSphere0->dt = dt;
+	pBox0->dt = dt;
+	t = 0.0;
+	set_panel_tip_txt();
+
+	//オブジェクトの初期値セット
+	Vector3 r_box0(0.0, 0.0, 50.0);
+	Vector3 v_box0(0.0, 0.0, 0.0);
+	Vector3 a_box0(0.0, 0.0, 0.0);
+	pBox0->init_mob(0.0, r_box0, v_box0, a_box0);
+
+	return;
+};
+
 
 void CPub::set_panel_tip_txt()
 {
@@ -317,10 +384,9 @@ void CPub::set_panel_tip_txt()
 	SetWindowText(GetDlgItem(inf.hWnd_opepane, IDC_STATIC_TASKSET4), wstr_type.c_str());
 }
 
-
 //#################### OPEN GL ################################################
 void CPub::ActOpenGL(void) {
-
+	bGLactive = FALSE;
 	glutInit(&__argc, __argv);//環境の初期化
 	glutInitWindowPosition(WindowPositionX, WindowPositionY);//ウィンドウの位置の指定
 	glutInitWindowSize(WindowWidth, WindowHeight); //ウィンドウサイズの指定
@@ -331,7 +397,7 @@ void CPub::ActOpenGL(void) {
 
 	glutMouseWheelFunc(mouse_wheel);	//マウスホイール操作時に呼び出される関数
 	Initialize();						//初期設定の関数を呼び出す
-
+	bGLactive = TRUE;
 	glutMainLoop();
 
 	return;
@@ -348,7 +414,6 @@ void CPub::Initialize(void) {
 	//光源の設定--------------------------------------
 	GLfloat light_position0[] = { -50.0, -50.0, 20.0, 1.0 }; //光源0の座標
 	glLightfv(GL_LIGHT0, GL_POSITION, light_position0); //光源0をセット
-
 }
 //----------------------------------------------------
 // 描画の関数
@@ -356,7 +421,7 @@ void CPub::Initialize(void) {
 void CPub::Display(void) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); //バッファの消去
 
-	t = dt * tn;
+	//t = dt * tn;
 
 	//透視変換行列の設定------------------------------
 	glMatrixMode(GL_PROJECTION);//行列モードの設定（GL_PROJECTION : 透視変換行列の設定、GL_MODELVIEW：モデルビュー変換行列）
@@ -382,15 +447,13 @@ void CPub::Display(void) {
 	//-----------------------------------
 	
 	//球 描画
-	Sphere0.r.x = 10.0 * cos(omega * t);
-	Sphere0.r.y = 10.0 * sin(omega * t);
-	
+
 	glPushMatrix();
 	glMaterialfv(GL_FRONT, GL_AMBIENT, ms_ruby.ambient);
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, ms_ruby.diffuse);
 	glMaterialfv(GL_FRONT, GL_SPECULAR, ms_ruby.specular);
 	glMaterialfv(GL_FRONT, GL_SHININESS, &ms_ruby.shininess);
-	glTranslated(Sphere0.r.x, Sphere0.r.y, Sphere0.r.z);//平行移動値の設定
+	glTranslated(pSphere0->r.x, pSphere0->r.y, pSphere0->r.z);//平行移動値の設定
 	glutSolidSphere(4.0, 20, 20);//引数：(半径, Z軸まわりの分割数, Z軸に沿った分割数)
 	glPopMatrix();
 
@@ -398,7 +461,7 @@ void CPub::Display(void) {
 
 	glPushMatrix();
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, green);
-	glTranslated(Box0.r.x, Box0.r.y, Box0.r.z);//平行移動値の設定
+	glTranslated(pBox0->r.x, pBox0->r.y, pBox0->r.z);//平行移動値の設定
 	glutSolidCube(3.0);//引数：(一辺の長さ)
 	glPopMatrix();
 
@@ -409,18 +472,42 @@ void CPub::Display(void) {
 	glLineWidth(2.0);
 
 	glBegin(GL_LINES);
-	glVertex3d(Sphere0.r.x, Sphere0.r.y, Sphere0.r.z);
-	glVertex3d(Box0.r.x, Box0.r.y, Box0.r.z);
+	glVertex3d(pSphere0->r.x, pSphere0->r.y, pSphere0->r.z);
+	glVertex3d(pBox0->r.x, pBox0->r.y, pBox0->r.z);
 	glEnd();
 
+
+
+	//文字の描画
+	char t_char[20];
+	char t_char2[20];
+
+	strcpy_s(t_char2, "t = ");
+	sprintf_s(t_char, "%f", t);
+	strcat_s(t_char2, t_char);
+	DISPLAY_TEXT(5, 93, t_char2);
+
+	strcpy_s(t_char2, "ax = ");
+	sprintf_s(t_char, "%f", pBox0->a.x);
+	strcat_s(t_char2, t_char);
+	DISPLAY_TEXT(5, 88, t_char2);
+
+	strcpy_s(t_char2, "vx = ");
+	sprintf_s(t_char, "%f", pBox0->v.x);
+	strcat_s(t_char2, t_char);
+	DISPLAY_TEXT(5, 83, t_char2);
+
+	strcpy_s(t_char2, "rx = ");
+	sprintf_s(t_char, "%f", pBox0->r.x);
+	strcat_s(t_char2, t_char);
+	DISPLAY_TEXT(5, 78, t_char2);
+
+	
 	//陰影OFF-----------------------------
 	glDisable(GL_LIGHTING);
 	//-----------------------------------
 
 	Ground();
-
-	tn++;
-
 
 	glutSwapBuffers(); //glutInitDisplayMode(GLUT_DOUBLE)でダブルバッファリングを利用可
 }
@@ -429,9 +516,8 @@ void CPub::Display(void) {
 // アイドル時に呼び出される関数
 //----------------------------------------------------
 void CPub::Idle() {
-	glutPostRedisplay(); //glutDisplayFunc()を１回実行する
+	//glutPostRedisplay(); //glutDisplayFunc()を１回実行する
 }
-
 
 //----------------------------------------------------
 // 大地の描画
@@ -714,6 +800,25 @@ void CPub::mouse_on(int button, int state, int x, int y)
 	cout << x << " " << y << endl;
 }
 
+//----------------------------------------------------
+// マウスホイール
+//----------------------------------------------------
+void CPub::mouse_wheel(int wheel_number, int direction, int x, int y) {
+
+	if (direction == 1) {
+		ViewPoint.z += 5.0;
+	}
+	else {
+		ViewPoint.z -= 5.0;
+	}
+
+	if (ViewPoint.z < 0.0f)
+	{
+		ViewPoint.z = 0.0f;
+	}
+
+}
+
 //////////////////////////////////////////////////////////////////////////
 // マウスドラッグによる回転
 //////////////////////////////////////////////////////////////////////////
@@ -749,21 +854,4 @@ void CPub::qrot(double r[], double q[]) {
 	r[10] = 1.0 - x2 - y2;
 	r[3] = r[7] = r[11] = r[12] = r[13] = r[14] = 0.0;
 	r[15] = 1.0;
-}
-
-
-void CPub::mouse_wheel(int wheel_number, int direction, int x, int y) {
-	
-	if (direction == 1) { 
-		ViewPoint.z += 5.0;
-	}
-	else {
-		ViewPoint.z -= 5.0;
-	}
-
-	if (ViewPoint.z < 0.0f)
-	{
-		ViewPoint.z = 0.0f;
-	}
-
 }

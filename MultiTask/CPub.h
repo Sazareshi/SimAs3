@@ -6,6 +6,8 @@
 
 #define _BITMAP 0
 #define SCALE (2.0 * 3.14159265358979323846)  // マウスの相対位置→回転角の換算係数
+#define G	9.80665
+
 
 //----------------------------------------------------
 // 物質質感の定義
@@ -17,7 +19,6 @@ struct MaterialStruct {
 	GLfloat shininess;
 };
 
-
 typedef struct _QUADS_VERTEX {
 	GLfloat v0[3];
 	GLfloat v1[3];
@@ -25,58 +26,63 @@ typedef struct _QUADS_VERTEX {
 	GLfloat v3[3];
 }QUADS_VERTEX;
 
-class MOB
+//----------------------------------------------------
+// オブジェクト定義クラス
+//----------------------------------------------------
+class MOB_Sphere : public RK4 //吊荷
 {
 public:
-	MOB() { omega = 0.0, l = 1.0, r.x=0.0, r.y = 0.0, r.z = 0.0; };
-	MOB(double _x, double _y, double _z) { omega = 0.0, l = 1.0, r.x = _x, r.y = _y, r.z = _z; };
-	~MOB() {};
-	Vector3 r, v, a;
-	double omega;
-	double l;
-	double _t;
+	MOB_Sphere() { r.x = 0.0, r.y = 0.0, r.z = 0.0, v.x = 0.0, v.y = 0.0, v.z = 0.0; dt = 0.01; };
+	MOB_Sphere(double _dt, Vector3& _r, Vector3& _v) {dt = _dt;	r.copy(_r);	v.copy(_v);	};
+	~MOB_Sphere() {}
 
-	virtual Vector3 r_function(double t) {
-		return Vector3(l * sin(omega * t), 0, r.z);
-	};
-	virtual Vector3 v_function(double t) {
-		return Vector3(l * omega * cos(omega * t), 0, 0);
-	};
-	virtual Vector3 a_function(double t) {
-		return Vector3(-l * omega * omega * sin(omega * t), 0, 0);
-	};
-	virtual void move(Vector3 pos) { r.copy(pos); };
+	double L;
+	Vector3 a;
+
+	void init_mob(double _dt, Vector3 r0, Vector3 v0, Vector3 a0) { dt = _dt;  r.copy(r0); v.copy(v0); a.copy(a0); return; };
+	Vector3 A(double t, Vector3& r, Vector3& v, Vector3& ref_a);
+	double S(Vector3& r_box, Vector3& v_box, Vector3& a_box);
 };
-class MOB_Sphere : public MOB
+
+class MOB_Box : public RK4 //吊点荷
+
 {
 public:
-	MOB_Sphere() { omega = 0.0, l = 1.0, r.x = 0.0, r.y = 0.0, r.z = 0.0; };
-	MOB_Sphere(double _x, double _y, double _z) { omega = 0.0, l = 1.0, r.x = _x, r.y = _y, r.z = _z; };
+	MOB_Box() { r.x = 0.0, r.y = 0.0, r.z = 0.0, v.x = 0.0, v.y = 0.0, v.z = 0.0; dt = 0.01;};
+	MOB_Box(double _dt, Vector3& _r, Vector3& _v) {	dt =_dt;r.copy(_r);v.copy(_v);	}
+	~MOB_Box() {};
+
+	Vector3 a;
+
+	void init_mob(double _dt, Vector3 r0, Vector3 v0, Vector3 a0) { dt = _dt;  r.copy(r0); v.copy(v0); a.copy(a0); return; };
+	Vector3 A(double t, Vector3& r, Vector3& v);
+	Vector3 A(Vector3& ref_a);
+	void timeEvolution(double t);
 };
-class MOB_Box : public MOB
-{
+
+//----------------------------------------------------
+// 他タスクからのコマンド処理クラス
+//----------------------------------------------------
+class PUB_COMMAND_HANDLER {
 public:
-	MOB_Box() { omega = 0.0, l = 1.0, r.x = 0.0, r.y = 0.0, r.z = 0.0; };
-	MOB_Box(double _x, double _y, double _z) { omega = 0.0, l = 1.0, r.x = _x, r.y = _y, r.z = _z; };
+	PUB_COMMAND_HANDLER() {};
+	~PUB_COMMAND_HANDLER() {};
+	Vector3 rref_box;
+	Vector3 vref_box;
+	Vector3 aref_box;
 };
 
-class RK4_Sim01 : public RK4
-{
-public:
-	RK4_Sim01() {};
-	~RK4_Sim01() {};
 
-	Vector3 L_;	//ロープのベクトル
-	double S;	//ロープ張力
-
-	Vector3 A(double t, Vector3& r, Vector3& v) { return r; };
-
-};
 class CPub :	public CThreadObj
 {
 public:
 	CPub();
 	~CPub();
+
+	void routine_work(void *param);
+	void init_task(void *pobj);
+
+	PUB_COMMAND_HANDLER pub_com;
 
 	static int WindowPositionX;					//生成するウィンドウ位置のX座標
 	static int WindowPositionY;					//生成するウィンドウ位置のY座標
@@ -92,6 +98,9 @@ public:
 	static gl_screenshot gs; //bmpファイルの出力
 	static double PI;
 
+	static bool bGLactive;
+
+
 	//----------------------------------------------------
 	// 視点の定義
 	//----------------------------------------------------
@@ -101,10 +110,9 @@ public:
 	// オブジェクト定義
 	//----------------------------------------------------
 	
-	static MOB_Sphere Sphere0;
-	static MOB_Box Box0;
-	static Vector3 Pos_Sphere;
-	static Vector3 Pos_Box;
+	static MOB_Sphere* pSphere0;//球オブジェクト
+	static MOB_Box*  pBox0;//吊点オブジェクト
+
 		//----------------------------------------------------
 	// 直方体の定義
 	//----------------------------------------------------
