@@ -32,16 +32,18 @@ typedef struct _QUADS_VERTEX {
 class MOB_Sphere : public RK4 //’Ý‰×
 {
 public:
-	MOB_Sphere() { r.x = 0.0, r.y = 0.0, r.z = 0.0, v.x = 0.0, v.y = 0.0, v.z = 0.0; dt = 0.01; };
-	MOB_Sphere(double _dt, Vector3& _r, Vector3& _v) {dt = _dt;	r.copy(_r);	v.copy(_v);	};
+	MOB_Sphere() { r.x = 0.0, r.y = 0.0, r.z = 0.0, v.x = 0.0, v.y = 0.0, v.z = 0.0; dt = 0.01; m = 1.0; };
+	MOB_Sphere(double _dt, Vector3& _r, Vector3& _v) {dt = _dt;	r.copy(_r);	v.copy(_v);	dt = 0.01; m = 1.0;};
 	~MOB_Sphere() {}
 
 	double L;
-	Vector3 a;
+	double m;
+	Vector3 r_box,v_box,a_box;
 
-	void init_mob(double _dt, Vector3 r0, Vector3 v0, Vector3 a0) { dt = _dt;  r.copy(r0); v.copy(v0); a.copy(a0); return; };
-	Vector3 A(double t, Vector3& r, Vector3& v, Vector3& ref_a);
-	double S(Vector3& r_box, Vector3& v_box, Vector3& a_box);
+	void set_box(Vector3& r_, Vector3& v_, Vector3& a_, double L_) { r_box.copy(r_); v_box.copy(v_); a_box.copy(a_); L = L_; }
+	void init_mob(double _dt, Vector3 r0, Vector3 v0, Vector3 a0) { dt = _dt;  r.copy(r0); v.copy(v0);  return; };
+	Vector3 A(double t, Vector3& r, Vector3& v);
+	double S();
 };
 
 class MOB_Box : public RK4 //’Ý“_‰×

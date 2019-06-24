@@ -180,29 +180,35 @@ LRESULT CALLBACK  CPub::PanelProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp) {
 
 void CPub::routine_work(void *param) {
 
+	Vector3 tmp_a;
+
 	//‹…‚Ì“®ì
+#if 0
 	pSphere0->r.x = 10.0 * cos(omega * t);
 	pSphere0->r.y = 10.0 * sin(omega * t);
+#else
+	pSphere0->set_box(pBox0->r, pBox0->v, pBox0->a,50.0);
+	pSphere0->timeEvolution(t);
+	pSphere0->r.add(pSphere0->dr);
+	pSphere0->v.add(pSphere0->dv);
+#endif
 
 	//’İ“_‚Ì“®ì
-
-	Vector3 tmp_a = pBox0->A(pPubObj->pub_com.aref_box);
+	tmp_a = pBox0->A(pPubObj->pub_com.aref_box);
 	pBox0->dt = dt;
 	pBox0->timeEvolution(t);
-
-	pBox0->dr.x = dt * pBox0->v.x;
-	pBox0->dv.x = dt * pBox0->a.x;
-
-
 	pBox0->r.add(pBox0->dr);
 	pBox0->v.add(pBox0->dv);
 
-	t = t + dt;
-	tn++;
 
+
+	tn++;
 	if ((bGLactive)&& (tn & 0x08)){
 		glutPostRedisplay(); //glutDisplayFunc()‚ğ‚P‰ñÀs‚·‚é
 	}
+	
+	t = t + dt;
+
 	ws << L"I am working!" << *(inf.psys_counter);
 	tweet2owner(ws.str()); ws.str(L""); ws.clear();
 

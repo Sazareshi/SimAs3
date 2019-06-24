@@ -24,12 +24,14 @@ void CPly::routine_work(void *param) {
 	
 	t = t + dt;
 	double omega = 2*3.14*0.1;
+#if 0
 	tmp_a.x =  5.0 * omega*omega * cos( t * omega);
-	
 	if((int(t)+0x070)&0x080) tmp_a.y = 0.1 * omega*omega;
 	else tmp_a.y = -0.1 * omega*omega;
-	//	tmp_a.x = 0.0 * omega*omega * cos(t * omega);
-
+#else
+	tmp_a.x = 0.0 * omega*omega * cos(t * omega);
+	tmp_a.y = 0.0 * omega*omega * cos(t * omega);
+#endif
 	pPubObj->pub_com.aref_box.copy(tmp_a);
 
 	

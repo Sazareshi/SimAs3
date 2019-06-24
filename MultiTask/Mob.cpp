@@ -2,16 +2,23 @@
 #include "CPub.h"
 
 /* Sphere*/
-Vector3 MOB_Sphere::A(double t, Vector3& r, Vector3& v, Vector3& ref_a) {
+Vector3 MOB_Sphere::A(double t, Vector3& r, Vector3& v) {
+	Vector3 a;
+	double Sdivm = S()/m;
+	a.x = Sdivm * (r.x - r_box.x);
+	a.y = Sdivm * (r.y - r_box.y);
+	a.z = -G + Sdivm * (r.z - r_box.z);
+	//a.z = 0;
 	return a;
 }
-double  MOB_Sphere::S(Vector3& r_box, Vector3& v_box, Vector3& a_box) {
+double  MOB_Sphere::S() {
 	Vector3 v_ = v.clone().sub(v_box);
 	double v_abs2 = v_.lengthSq();
 	Vector3 vectmp;
 	Vector3 vecL = vectmp.subVectors(r,r_box);
-	return -(v_abs2 - a_box.dot(vecL) - G * vecL.z) / (L*L);
+	return -m*(v_abs2 - a_box.dot(vecL) - G * vecL.z) / (L*L);
 }
+
 
 /* Box*/
 Vector3 MOB_Box::A(double t, Vector3& r, Vector3& v) {
