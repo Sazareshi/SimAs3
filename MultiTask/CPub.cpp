@@ -14,8 +14,9 @@ CPub* pPubObj;
 CPub::CPub(){
 	pPubObj = this;
 	
-	pBox0 = new MOB_Box;
-	pSphere0 = new MOB_Sphere;
+	pHanging = new MOB_HangingObj;
+	pLoad = new MOB_HungLoad;
+	pLoad->pHangingObj = pHanging;
 
 	WindowPositionX = 600;
 	WindowPositionY = 100;
@@ -24,8 +25,8 @@ CPub::CPub(){
 	pub_com.vref_box.set(0.0, 0.0, 0.0);
 }
 CPub::~CPub(){
-	delete pSphere0;
-	delete pBox0;
+	delete pLoad;
+	delete pHanging;
 }
 
 //----------------------------------------------------
@@ -54,9 +55,9 @@ CPub::~CPub(){
 	double CPub::omega = 2.0 * PI/5.0;
 	gl_screenshot CPub::gs; //bmpファイルの出力
 
-	Vector3 CPub::ViewPoint(0.0, -100.0, 200.0);
-	MOB_Sphere* CPub::pSphere0;
-	MOB_Box* CPub::pBox0;
+	Vector3 CPub::ViewPoint(0.0, -50.0, 50.0);
+	MOB_HungLoad* CPub::pLoad;
+	MOB_HangingObj* CPub::pHanging;
 	double CPub::hanpatu = 0.9;
 
 	//直方体の定義
@@ -183,25 +184,19 @@ void CPub::routine_work(void *param) {
 	Vector3 tmp_a;
 
 	//球の動作
-#if 0
-	pSphere0->r.x = 10.0 * cos(omega * t);
-	pSphere0->r.y = 10.0 * sin(omega * t);
-#else
-	pSphere0->set_box(pBox0->r, pBox0->v, pBox0->a,50.0);
-	pSphere0->timeEvolution(t);
-	pSphere0->r.add(pSphere0->dr);
-	pSphere0->v.add(pSphere0->dv);
-#endif
+	pLoad->timeEvolution(t);
+	pLoad->r.add(pLoad->dr);
+	pLoad->v.add(pLoad->dv);
 
 	//吊点の動作
-	tmp_a = pBox0->A(pPubObj->pub_com.aref_box);
-	pBox0->dt = dt;
-	pBox0->timeEvolution(t);
-	pBox0->r.add(pBox0->dr);
-	pBox0->v.add(pBox0->dv);
 
-
-
+	pHanging->set_Aref(pPubObj->pub_com.aref_box);
+	pHanging->dt = dt;
+	pHanging->timeEvolution(t);
+	pHanging->r.add(pHanging->dr);
+	pHanging->v.add(pHanging->dv);
+	pub_com.vfb_box.copy(pHanging->v);
+	
 	tn++;
 	if ((bGLactive)&& (tn & 0x08)){
 		glutPostRedisplay(); //glutDisplayFunc()を１回実行する
@@ -217,16 +212,16 @@ void CPub::routine_work(void *param) {
 void CPub::init_task(void *pobj) {
 
 	dt = double(inf.cycle_ms) / 1000.0;
-	pSphere0->dt = dt;
-	pBox0->dt = dt;
+	pLoad->dt = dt;
+	pHanging->dt = dt;
 	t = 0.0;
 	set_panel_tip_txt();
 
 	//オブジェクトの初期値セット
-	Vector3 r_box0(0.0, 0.0, 50.0);
+	Vector3 r_box0(0.0, 0.0, L0);
 	Vector3 v_box0(0.0, 0.0, 0.0);
 	Vector3 a_box0(0.0, 0.0, 0.0);
-	pBox0->init_mob(0.0, r_box0, v_box0, a_box0);
+	pHanging->init_mob(0.0, r_box0, v_box0, a_box0, L0,0.0,0.0);
 
 	return;
 };
@@ -390,6 +385,14 @@ void CPub::set_panel_tip_txt()
 	SetWindowText(GetDlgItem(inf.hWnd_opepane, IDC_STATIC_TASKSET4), wstr_type.c_str());
 }
 
+void CPub::set_panel_pb_txt() {
+	wstring wstr;
+
+	wstr = L"Act OpenGL";
+	SetWindowText(GetDlgItem(inf.hWnd_opepane, IDC_TASK_FUNC_RADIO1), wstr.c_str());
+
+}
+
 //#################### OPEN GL ################################################
 void CPub::ActOpenGL(void) {
 	bGLactive = FALSE;
@@ -459,16 +462,16 @@ void CPub::Display(void) {
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, ms_ruby.diffuse);
 	glMaterialfv(GL_FRONT, GL_SPECULAR, ms_ruby.specular);
 	glMaterialfv(GL_FRONT, GL_SHININESS, &ms_ruby.shininess);
-	glTranslated(pSphere0->r.x, pSphere0->r.y, pSphere0->r.z);//平行移動値の設定
-	glutSolidSphere(4.0, 20, 20);//引数：(半径, Z軸まわりの分割数, Z軸に沿った分割数)
+	glTranslated(pLoad->r.x, pLoad->r.y, pLoad->r.z);//平行移動値の設定
+	glutSolidSphere(1.0, 20, 20);//引数：(半径, Z軸まわりの分割数, Z軸に沿った分割数)
 	glPopMatrix();
 
 	//立方体　描画
 
 	glPushMatrix();
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, green);
-	glTranslated(pBox0->r.x, pBox0->r.y, pBox0->r.z);//平行移動値の設定
-	glutSolidCube(3.0);//引数：(一辺の長さ)
+	glTranslated(pHanging->r.x, pHanging->r.y, pHanging->r.z);//平行移動値の設定
+	glutSolidCube(1.0);//引数：(一辺の長さ)
 	glPopMatrix();
 
 
@@ -478,8 +481,8 @@ void CPub::Display(void) {
 	glLineWidth(2.0);
 
 	glBegin(GL_LINES);
-	glVertex3d(pSphere0->r.x, pSphere0->r.y, pSphere0->r.z);
-	glVertex3d(pBox0->r.x, pBox0->r.y, pBox0->r.z);
+	glVertex3d(pLoad->r.x, pLoad->r.y, pLoad->r.z);
+	glVertex3d(pHanging->r.x, pHanging->r.y, pHanging->r.z);
 	glEnd();
 
 
@@ -494,17 +497,20 @@ void CPub::Display(void) {
 	DISPLAY_TEXT(5, 93, t_char2);
 
 	strcpy_s(t_char2, "ax = ");
-	sprintf_s(t_char, "%f", pBox0->a.x);
+	sprintf_s(t_char, "%f", pHanging->a.x);
 	strcat_s(t_char2, t_char);
 	DISPLAY_TEXT(5, 88, t_char2);
 
 	strcpy_s(t_char2, "vx = ");
-	sprintf_s(t_char, "%f", pBox0->v.x);
+	sprintf_s(t_char, "%f", pHanging->v.x);
 	strcat_s(t_char2, t_char);
 	DISPLAY_TEXT(5, 83, t_char2);
 
-	strcpy_s(t_char2, "rx = ");
-	sprintf_s(t_char, "%f", pBox0->r.x);
+	strcpy_s(t_char2, "L = ");
+	Vector3 tempL;
+	tempL=tempL.subVectors(pHanging->r,pLoad->r);
+
+	sprintf_s(t_char, "%f", tempL.length());
 	strcat_s(t_char2, t_char);
 	DISPLAY_TEXT(5, 78, t_char2);
 
@@ -534,11 +540,11 @@ void CPub::Ground(void) {
 	glColor3d(0.8, 0.8, 0.8);  // 大地の色
 
 	glBegin(GL_LINES);
-	for (double ly = -ground_max_y; ly <= ground_max_y; ly += 10.0) {
+	for (double ly = -ground_max_y; ly <= ground_max_y; ly += 2.0) {
 		glVertex3d(-ground_max_x, ly, 0);
 		glVertex3d(ground_max_x, ly, 0);
 	}
-	for (double lx = -ground_max_x; lx <= ground_max_x; lx += 10.0) {
+	for (double lx = -ground_max_x; lx <= ground_max_x; lx += 2.0) {
 		glVertex3d(lx, ground_max_y, 0);
 		glVertex3d(lx, -ground_max_y, 0);
 	}

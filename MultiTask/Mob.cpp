@@ -2,35 +2,55 @@
 #include "CPub.h"
 
 /* Sphere*/
-Vector3 MOB_Sphere::A(double t, Vector3& r, Vector3& v) {
+
+#define compensationK 0.5
+#define compensationGamma 0.5
+
+Vector3 MOB_HungLoad::A(double t, Vector3& r, Vector3& v) {
 	Vector3 a;
+	Vector3 L_;
+	
+	L_= L_.subVectors(r, pHangingObj->r);
+	
 	double Sdivm = S()/m;
-	a.x = Sdivm * (r.x - r_box.x);
-	a.y = Sdivm * (r.y - r_box.y);
-	a.z = -G + Sdivm * (r.z - r_box.z);
-	//a.z = 0;
+
+//	a.x = Sdivm * (r.x - r_box.x);
+//	a.y = Sdivm * (r.y - r_box.y);
+//	a.z = -G + Sdivm * (r.z - r_box.z);
+
+	a = L_.clone().multiplyScalor(Sdivm);
+	a.z -= G;
+
+//計算誤差によるロープ長ずれ補正
+	Vector3 hatL = L_.clone().normalize();
+	// 補正ばね弾性力
+	Vector3 ak = hatL.clone().multiplyScalor(-compensationK * ( pHangingObj->l- L_.length()));
+	Vector3 v_ = v_.subVectors(v, pHangingObj->v);
+	// 補正粘性抵抗力
+	Vector3 agamma = hatL.clone().multiplyScalor(-compensationGamma * v_.dot(hatL));
+	// 張力にひもの長さの補正力を加える
+	
+	a.add(ak).add(agamma);
+	
 	return a;
 }
-double  MOB_Sphere::S() {
-	Vector3 v_ = v.clone().sub(v_box);
+double  MOB_HungLoad::S() {
+	Vector3 v_ = v.clone().sub(pHangingObj->v);
 	double v_abs2 = v_.lengthSq();
 	Vector3 vectmp;
-	Vector3 vecL = vectmp.subVectors(r,r_box);
-	return -m*(v_abs2 - a_box.dot(vecL) - G * vecL.z) / (L*L);
+	Vector3 vecL = vectmp.subVectors(r, pHangingObj->r);
+	return -m*(v_abs2 - pHangingObj->a.dot(vecL) - G * vecL.z + pHangingObj->lv*pHangingObj->lv + pHangingObj->l*pHangingObj->la) / (pHangingObj->l*pHangingObj->l);
 }
 
 
-/* Box*/
-Vector3 MOB_Box::A(double t, Vector3& r, Vector3& v) {
-	return a;
+/* Hanging Object*/
+Vector3 MOB_HangingObj::A(double t, Vector3& r, Vector3& v) {
+	return Aref;
 }
-Vector3 MOB_Box::A(Vector3& ref_a) {
-	a.copy(ref_a);
-	return a;
-}
+
 
 //ルンゲ・クッタ法による時間発展
-void MOB_Box::timeEvolution(double t) {
+void MOB_HangingObj::timeEvolution(double t) {
 
 	Vector3 v1 = V(t, r, v);
 	Vector3 a1 = a;

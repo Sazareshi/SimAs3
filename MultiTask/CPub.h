@@ -7,6 +7,7 @@
 #define _BITMAP 0
 #define SCALE (2.0 * 3.14159265358979323846)  // マウスの相対位置→回転角の換算係数
 #define G	9.80665
+#define L0  10.0
 
 
 //----------------------------------------------------
@@ -29,41 +30,48 @@ typedef struct _QUADS_VERTEX {
 //----------------------------------------------------
 // オブジェクト定義クラス
 //----------------------------------------------------
-class MOB_Sphere : public RK4 //吊荷
+
+class MOB_HangingObj : public RK4 //吊点
 {
 public:
-	MOB_Sphere() { r.x = 0.0, r.y = 0.0, r.z = 0.0, v.x = 0.0, v.y = 0.0, v.z = 0.0; dt = 0.01; m = 1.0; };
-	MOB_Sphere(double _dt, Vector3& _r, Vector3& _v) {dt = _dt;	r.copy(_r);	v.copy(_v);	dt = 0.01; m = 1.0;};
-	~MOB_Sphere() {}
+	MOB_HangingObj() { r.x = 0.0, r.y = 0.0, r.z = 0.0, v.x = 0.0, v.y = 0.0, v.z = 0.0; dt = 0.01; return; };
+	MOB_HangingObj(double _dt, Vector3& _r, Vector3& _v) { dt = _dt; r.copy(_r); v.copy(_v);	return; }
+	~MOB_HangingObj() {};
 
-	double L;
+	double l;//ロープ長
+	double la;//巻加速度;
+	double lv;//巻速度;
+
+	Vector3 a;
+	Vector3 Vref, Aref;
+
+	void init_mob(double _dt, Vector3 r0, Vector3 v0, Vector3 a0, double L_, double vL_, double aL_) { dt = _dt;  r.copy(r0); v.copy(v0); a.copy(a0); l = L_, lv = vL_, la = aL_; return; };
+	Vector3 A(double t, Vector3& r, Vector3& v);
+	void timeEvolution(double t);
+	void set_Vref(Vector3& ref_v) { Vref.copy(ref_v); return; };
+	void set_Aref(Vector3& ref_a) { Aref.copy(ref_a); return; };
+};
+
+class MOB_HungLoad : public RK4 //吊荷
+{
+public:
+	MOB_HungLoad() { r.x = 0.0, r.y = 0.0, r.z = 0.0, v.x = 0.0, v.y = 0.0, v.z = 0.0; dt = 0.01; m = 1.0; };
+	MOB_HungLoad(double _dt, Vector3& _r, Vector3& _v) {dt = _dt;	r.copy(_r);	v.copy(_v);	dt = 0.01; m = 1.0;};
+	~MOB_HungLoad() {}
+
+	MOB_HangingObj* pHangingObj;
 	double m;
-	Vector3 r_box,v_box,a_box;
+	//Vector3 r_box,v_box,a_box;
 
-	void set_box(Vector3& r_, Vector3& v_, Vector3& a_, double L_) { r_box.copy(r_); v_box.copy(v_); a_box.copy(a_); L = L_; }
+	void set_box(MOB_HangingObj* pHO) { pHangingObj = pHO; };
 	void init_mob(double _dt, Vector3 r0, Vector3 v0, Vector3 a0) { dt = _dt;  r.copy(r0); v.copy(v0);  return; };
 	Vector3 A(double t, Vector3& r, Vector3& v);
 	double S();
 };
 
-class MOB_Box : public RK4 //吊点荷
-
-{
-public:
-	MOB_Box() { r.x = 0.0, r.y = 0.0, r.z = 0.0, v.x = 0.0, v.y = 0.0, v.z = 0.0; dt = 0.01;};
-	MOB_Box(double _dt, Vector3& _r, Vector3& _v) {	dt =_dt;r.copy(_r);v.copy(_v);	}
-	~MOB_Box() {};
-
-	Vector3 a;
-
-	void init_mob(double _dt, Vector3 r0, Vector3 v0, Vector3 a0) { dt = _dt;  r.copy(r0); v.copy(v0); a.copy(a0); return; };
-	Vector3 A(double t, Vector3& r, Vector3& v);
-	Vector3 A(Vector3& ref_a);
-	void timeEvolution(double t);
-};
 
 //----------------------------------------------------
-// 他タスクからのコマンド処理クラス
+// 他タスクとのIF処理クラス
 //----------------------------------------------------
 class PUB_COMMAND_HANDLER {
 public:
@@ -72,8 +80,9 @@ public:
 	Vector3 rref_box;
 	Vector3 vref_box;
 	Vector3 aref_box;
-};
 
+	Vector3 vfb_box;
+};
 
 class CPub :	public CThreadObj
 {
@@ -112,8 +121,8 @@ public:
 	// オブジェクト定義
 	//----------------------------------------------------
 	
-	static MOB_Sphere* pSphere0;//球オブジェクト
-	static MOB_Box*  pBox0;//吊点オブジェクト
+	static MOB_HungLoad* pLoad;//球オブジェクト
+	static MOB_HangingObj*  pHanging;//吊点オブジェクト
 
 		//----------------------------------------------------
 	// 直方体の定義
@@ -157,6 +166,7 @@ public:
 
 	LRESULT CALLBACK PanelProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp);
 	void set_panel_tip_txt();//タブパネルのStaticテキストを設定
+	void set_panel_pb_txt(); //Function PBのテキストセット
 
 //OPEN GL---------------------------------------------
 	static void Initialize(void);

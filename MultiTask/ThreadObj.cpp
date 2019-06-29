@@ -63,8 +63,6 @@ void CThreadObj::routine_work(void *param) {
 	//txout2msg_listbox(wstr);
 
 };
-
-
 void CThreadObj::optional_work1(void *param) {
 	ws << L"Working on option1!" << *(inf.psys_counter);
 	tweet2owner(ws.str()); ws.str(L""); ws.clear();
@@ -73,7 +71,6 @@ void CThreadObj::optional_work2(void *param) {
 	ws << L"Working on option2!" << *(inf.psys_counter);
 	tweet2owner(ws.str()); ws.str(L""); ws.clear();
 };
-
 
 //# メインウィンドウへのショートメッセージ表示　string
 void CThreadObj::tweet2owner(const std::string &src) {
